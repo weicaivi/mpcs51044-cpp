@@ -1,3 +1,0 @@
-/home/weicaivi/mpcs51044-cpp/build/CMakeFiles/rebuild_cache.dir
-/home/weicaivi/mpcs51044-cpp/build/CMakeFiles/edit_cache.dir
-/home/weicaivi/mpcs51044-cpp/build/CMakeFiles/pascals_triangle.dir
