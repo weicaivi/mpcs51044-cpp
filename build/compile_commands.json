@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/home/weicaivi/mpcs51044-cpp/build",
+  "command": "/usr/bin/c++   -I/home/weicaivi/mpcs51044-cpp/hw1/1.2/../../fmt/include  -g   -std=gnu++2a -o CMakeFiles/pascals_triangle.dir/pascals_triangle.cpp.o -c /home/weicaivi/mpcs51044-cpp/hw1/1.2/pascals_triangle.cpp",
+  "file": "/home/weicaivi/mpcs51044-cpp/hw1/1.2/pascals_triangle.cpp"
+}
+]

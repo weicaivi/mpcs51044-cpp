@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/pascals_triangle.dir/pascals_triangle.cpp.o  -o pascals_triangle 

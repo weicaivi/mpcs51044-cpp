@@ -1,6 +1,8 @@
 #include<iostream>
-#include<format>
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
 using namespace std;
+using namespace fmt;
 
 int
 main()

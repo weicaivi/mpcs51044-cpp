@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/frame2.dir/frame2.cpp.o  -o frame2 

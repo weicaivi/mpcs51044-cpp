@@ -1,10 +1,11 @@
 // Frame.cpp : Defines the entry point for the console application.
-//
 
 #include <iostream>
 #include <string>
-#include <format>
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
 using namespace std;
+using namespace fmt;
 
 int main()
 {

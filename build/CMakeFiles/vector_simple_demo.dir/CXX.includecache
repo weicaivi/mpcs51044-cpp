@@ -1,0 +1,14 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/weicaivi/mpcs51044-cpp/hw1/1.1/vector_simple_demo/vector_simple_demo.cpp
+vector
+-
+iostream
+-
+
