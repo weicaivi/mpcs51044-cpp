@@ -1,0 +1,8 @@
+Member functions are generally better for operator+=. This is because They have 
+direct access to the class's private members, making implementation cleaner and 
+more efficient by avoiding getter/setter calls. They better reflect that += 
+modifies the left operand in-place, making the relationship between the operation
+and the modified object clearer
+
+The exception is when the left operand cannot be modified (e.g., adding to a
+primitive type), making a global function is necessary.

@@ -1,12 +1,13 @@
 #include <iostream>
 
 struct PrintOnDestruct {
+    PrintOnDestruct(const char* msg) : message(msg) {}
     ~PrintOnDestruct() { std::cout << message; }
     const char* message;
 };
 
 struct PrintOnConstruct {
-    PrintOnConstruct() { std::cout << message; }
+    PrintOnConstruct(const char* msg) : message(msg) { std::cout << message; }
     const char* message;
 };
 
@@ -15,9 +16,7 @@ static PrintOnConstruct hello{"Hello"};
 
 struct EnsureOrder {
     EnsureOrder() { 
-        // Force hello to be constructed before world
         (void)&hello; 
-        // Prevent optimization of world
         (void)&world;
     }
 };
