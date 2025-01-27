@@ -4,4 +4,4 @@ project(NthPower)
 
 include_directories(${CMAKE_SOURCE_DIR}/../../fmt/include)
 
-add_executable(Nth_power Nth_power.cpp)
+add_executable(Nth_power Nth_Power.cpp)
