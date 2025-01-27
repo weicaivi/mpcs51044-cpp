@@ -1,8 +1,42 @@
-Member functions are generally better for operator+=. This is because They have 
-direct access to the class's private members, making implementation cleaner and 
-more efficient by avoiding getter/setter calls. They better reflect that += 
-modifies the left operand in-place, making the relationship between the operation
-and the modified object clearer
+When overloading +=, the ability to modify the left operand is crucial since it
+alters the state of the left-hand operand by adding the right-hand operand's
+value to it. 
 
-The exception is when the left operand cannot be modified (e.g., adding to a
-primitive type), making a global function is necessary.
+    - When += is defined as a global function and is intended to work with a left
+    operand that is a primitive type or an immutable type, this could be erroneous
+    because primitives and const objects cannot be modified. For example, we cannot
+    have an operator that does something like int += MyClass, where int is expected
+    to be modified, as primitive types do not support being modified by custom
+    operators directly in this manner.
+
+    - A challenge with implementing += as a global function is the lack of direct
+    access to the class's private and protected members. We can circumvent this
+    by making the global function a friend of the class, but doing so can potentially
+    violate encapsulation principles by exposing internal state controls to external
+    functions.
+
+    - The += operator has a clear expectation of modifying its left operand. If
+    implementing it as a global function does not clearly convey this, it can be
+    confusing. For example, if += appears to modify the left operand but actually
+    returns a new object, it could mislead the users.
+
+    - Implementing += globally can handle conversions more symmetrically. For
+    instance, if conversions are defined for two types A and B, the global operator
+    can handle A += B and B += A more uniformly if implicit conversions are permissible.
+    However, if not carefully designed, this can lead to situations where the operation
+    makes sense when called with one type ordering but not the other.
+
+    - Implementing += as a global function can allow us to handle type conversions
+    more flexibly but also opens up the risk of unwanted implicit conversions that
+    might lead to bugs, which a class-specific member function could have prevented.
+
+Overall we prefer member functions for single-type operations. So if += primarily
+interacts with objects of the same class or closely related classes (via inheritance),
+using a member function is usually more straightforward and keeps the operation
+tightly coupled with the data it manipulates.
+
+However, we can consider global functions for mixed-type operations: if += operation
+frequently involves different types, especially across class hierarchies not controlled
+by us, or when adhering to certain patterns like the interaction of standard library
+containers with user-defined types, global functions might offer better flexibility
+and interoperability.
