@@ -1,5 +1,5 @@
 #ifndef MATRIX_H
-#  define MATRIX_H
+#define MATRIX_H
 #include <initializer_list>
 #include <algorithm>
 #include <array>
@@ -113,6 +113,17 @@ public:
 	T determinant() const {
 		return this->data[0][0];
 	}
+};
+
+template<typename T>
+class Matrix<T, 2, 2> : public MatrixCommon < T, 2, 2 > {
+public:
+    Matrix() = default;
+    Matrix(initializer_list<initializer_list<T>> init) : MatrixCommon<T, 2, 2>(init) {}
+
+    T determinant() const {
+        return this->data[0][0] * this->data[1][1] - this->data[0][1] * this->data[1][0];
+    }
 };
 
 template<typename T, int a, int b, int c>

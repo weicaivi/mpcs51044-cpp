@@ -1,5 +1,5 @@
 #ifndef MATRIX_H
-#  define MATRIX_H
+#define MATRIX_H
 #include <initializer_list>
 #include <algorithm>
 #include <array>
@@ -113,6 +113,13 @@ T
 determinantImpl(const Matrix<T, 1, 1> &m)
 {
 	return m(0, 0);
+}
+
+template<floating_point T>
+T
+determinantImpl(const Matrix<T, 2, 2> &m)
+{
+    return m(0, 0) * m(1, 1) - m(0, 1) * m(1, 0);
 }
 
 template<floating_point T, int h, int w>

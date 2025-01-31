@@ -46,6 +46,23 @@ public:
 		return data[x][y];
 	}
 
+    // Add operator+= for matrix addition
+    Matrix<rows, cols>& operator+=(const Matrix<rows, cols>& rhs) {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                data[i][j] += rhs(i, j);
+            }
+        }
+        return *this;
+    }
+
+    // Add operator+ for matrix addition
+    Matrix<rows, cols> operator+(const Matrix<rows, cols>& rhs) const {
+        Matrix<rows, cols> result(*this); // Create a copy of current matrix
+        result += rhs; // Use operator+= to add the matrices
+        return result;
+    }
+
 	inline friend
 		ostream &
 		operator<<
@@ -108,6 +125,13 @@ double
 Matrix<1, 1>::determinant() const
 {
 	return data[0][0];
+}
+
+template<>
+double
+Matrix<2, 2>::determinant() const
+{
+    return data[0][0] * data[1][1] - data[0][1] * data[1][0];
 }
 
 template<int a, int b, int c>
