@@ -1,0 +1,16 @@
+
+
+4.3
+The issue is that for_each makes a copy of the functor passed to it, and the modified 
+copy is discarded after the algorithm completes. So while the copy's maxlen is updated,
+our original maxf remains unchanged.
+
+From at the documentation for for_each, the function returns the final state of the
+functor. We can fix this by capturing that returned value: 
+
+`maxf = for_each(names.begin(), names.end(), maxf);
+cout << maxf.maxlen << endl;`
+
+Alternatively, we could also fix this by passing the functor by reference using ref:
+
+`for_each(names.begin(), names.end(), ref(maxf));`
