@@ -6,6 +6,7 @@ using namespace std;
 
 int main()
 {
+    cout << "Running Matrix Implementation Test\n";
 	auto start = chrono::system_clock::now();
 	Matrix<3, 3> m = { 
 			{ 1, 2, 3, }, 

@@ -1,9 +1,21 @@
-<<<<<<< HEAD
-4.2
-=======
 4.2 Matrix Benchmark
 
->>>>>>> ecebef980099031882c102516f5454a67bd73eb7
+The basic Matrix implementation is the fastest (28.06s), followed by 
+PSMatrix (29.82s), and OverloadMatrix (32.10s) is the slowest.
+The performance differences can be explained by their implementations.
+The basic Matrix is simpler and has less overhead, as it deals directly
+with the data without additional abstraction layers.
+PSMatrix adds polymorphic behavior through inheritance (MatrixCommon),
+which might introduce a small performance overhead
+OverloadMatrix's additional type checking (floating_point constraints) and
+more complex template machinery likely contribute to its slightly slower performance
+
+
+However, the differences are relatively small.
+
+The trade-off between performance and features tells us that the more
+sophisticated implementations offer better type safety and code organization.
+The basic Matrix implementation sacrifices some of these features for better performance.
 
 4.3
 The issue is that for_each makes a copy of the functor passed to it, and the modified 
