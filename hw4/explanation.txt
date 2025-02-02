@@ -1,4 +1,4 @@
-
+4.2
 
 4.3
 The issue is that for_each makes a copy of the functor passed to it, and the modified 
