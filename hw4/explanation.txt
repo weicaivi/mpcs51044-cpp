@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 4.2
+=======
+4.2 Matrix Benchmark
+
+>>>>>>> ecebef980099031882c102516f5454a67bd73eb7
 
 4.3
 The issue is that for_each makes a copy of the functor passed to it, and the modified 
