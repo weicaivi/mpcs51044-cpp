@@ -3,15 +3,18 @@
 #include "mpcs51044_stack.h"
 
 int main() {
-    mpcs51044::stack<int> s1 = {1, 2, 3};
-    std::cout << s1.pop() << std::endl;
+    // Create a stack with initializer list
+    mpcs51044::ThreadSafeStack<int> stack = {1, 2, 3, 4, 5};
+    std::cout << "Initial stack size: " << stack.size() << "\n";
+
+    stack.push(6);
+    stack.push(7);
     
-    mpcs51044::stack<int> s2 = s1;
-    std::cout << s2.pop() << std::endl;
-    
-    mpcs51044::stack<int> s3;
-    s3 = s1;
-    std::cout << s3.pop() << std::endl;
-    
+    int value;
+    while (stack.pop(value)) {
+        std::cout << "Popped: " << value << "\n";
+    }
+
+    std::cout << "Stack is empty: " << (stack.empty() ? "yes" : "no") << "\n";
     return 0;
 }
