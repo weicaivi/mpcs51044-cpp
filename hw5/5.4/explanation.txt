@@ -1,8 +1,0 @@
-I prefer `const int` over `int const`.
-
-In many programming languages, we read modifiers from left to right.
-`const int` follows this natural reading pattern. With `int const`, we
-have to mentally reorder the modifiers.
-
-`const int` is also more consistent with function declarations, where
-const must go to the left of what it modifies.
