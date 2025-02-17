@@ -14,23 +14,25 @@ private:
         std::unique_ptr<node> right;
         
         explicit node(const T& key) : key_value(key), left(nullptr), right(nullptr) {}
-        
-        // Copy constructor for node
-        node(const node& other) : 
-            key_value(other.key_value),
-            left(other.left ? std::make_unique<node>(*other.left) : nullptr),
-            right(other.right ? std::make_unique<node>(*other.right) : nullptr) {}
     };
 
     std::unique_ptr<node> root;
 
-    // Helper function to copy nodes recursively
-    std::unique_ptr<node> copy_tree(const node* src) {
+    // Helper function to deep copy a subtree
+    static std::unique_ptr<node> clone_subtree(const node* src) {
         if (!src) return nullptr;
-        return std::make_unique<node>(*src);
+        
+        auto new_node = std::make_unique<node>(src->key_value);
+        // Recursively clone left and right subtrees
+        if (src->left) {
+            new_node->left = clone_subtree(src->left.get());
+        }
+        if (src->right) {
+            new_node->right = clone_subtree(src->right.get());
+        }
+        return new_node;
     }
 
-    // Helper function to insert a key into a subtree
     void insert(const T& key, node* leaf) {
         if (key < leaf->key_value) {
             if (leaf->left) {
@@ -47,7 +49,6 @@ private:
         }
     }
 
-    // Helper function to search for a key in a subtree
     const node* search(const T& key, const node* leaf) const {
         if (!leaf) return nullptr;
         
@@ -64,32 +65,35 @@ public:
     // Default constructor
     btree() = default;
 
-    // Copy constructor
+    // Copy constructor - performs deep copy
     btree(const btree& other) {
         if (other.root) {
-            root = copy_tree(other.root.get());
+            root = clone_subtree(other.root.get());
         }
+    }
+
+    // Copy assignment - performs deep copy
+    btree& operator=(const btree& other) {
+        if (this != &other) {
+            // Clear existing tree
+            root = nullptr;
+            // Copy other tree
+            if (other.root) {
+                root = clone_subtree(other.root.get());
+            }
+        }
+        return *this;
     }
 
     // Move constructor
     btree(btree&& other) noexcept = default;
 
-    // Copy assignment operator
-    btree& operator=(const btree& other) {
-        if (this != &other) {
-            btree temp(other);
-            std::swap(root, temp.root);
-        }
-        return *this;
-    }
-
-    // Move assignment operator
+    // Move assignment
     btree& operator=(btree&& other) noexcept = default;
 
     // Destructor (unique_ptr handles cleanup automatically)
     ~btree() = default;
 
-    // Insert a key into the tree
     void insert(const T& key) {
         if (root) {
             insert(key, root.get());
@@ -98,28 +102,21 @@ public:
         }
     }
 
-    // Search for a key in the tree
-    bool search(const T& key) const {
+    bool contains(const T& key) const {
         return search(key, root.get()) != nullptr;
     }
 
-    // Get value at key (throws if not found)
-    const T& at(const T& key) const {
+    const T* search(const T& key) const {
         const node* found = search(key, root.get());
-        if (!found) {
-            throw std::out_of_range("Key not found in tree");
-        }
-        return found->key_value;
+        return found ? &found->key_value : nullptr;
     }
 
-    // Check if tree is empty
     bool empty() const {
         return root == nullptr;
     }
 
-    // Clear the tree
     void clear() {
-        root.reset();
+        root = nullptr;
     }
 };
 

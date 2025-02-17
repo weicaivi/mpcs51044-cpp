@@ -1,22 +1,23 @@
-Modifications: 
+The modifications are improvements over the original code:
 
-- Implementation of the Rule of Five (copy/move constructors and assignments)
-    -- Use of nullptr instead of NULL
-    -- Consistent const correctness
-    -- noexcept specifications where appropriate
-    -- Added empty() method for state checking
-    -- Added clear() for explicit cleanup
-    -- Added at() method that throws on missing keys
-    -- Changed search() to return a boolean for cleaner public interface
+1. Memory Safety:
+- Original: Used raw pointers, requiring manual memory management which is error-prone and could lead to memory leaks
+- Modified: Uses `unique_ptr` which provides automatic cleanup and makes ownership semantics explicit
 
+2. Type Flexibility:
+- Original: Hard-coded to work only with `int`
+- Modified: Uses templates, allowing the tree to work with any comparable type
 
-The modifications are an improvements over the original implementation
+3. Rule of Five Implementation:
+- Original: Missing copy constructor and assignment operator, violating Rule of Three
+- Modified: implements all five special member functions, including move semantics
+- This prevents undefined behavior when copying trees and allows efficient moving of trees
 
-Template Support: Making the class templated with template<typename T> greatly increases its flexibility, allowing it to store any comparable type rather than just integers. This makes the class much more reusable.
+4. Enhanced Interface:
+- Added `contains()` method which is safer than exposing raw node pointers
+- Added `empty()` and `clear()` for better state management
+- Returns `const T*` from search rather than exposing internal node structure
 
-Memory Safety: Using std::unique_ptr instead of raw pointers eliminates potential memory leaks and makes ownership semantics clear. The original implementation required manual memory management which is error-prone.
-
-Exception Safety: The modified version is exception-saf (RAII) through unique_ptr and proper copy operations. The std::make_unique usage also provides strong exception guarantees during node creation.
-Modern C++ Features:
-
-Better Encapsulation: 1) Node struct is properly hidden in private section 2) Internal helper functions are clearly separated from public interface 3) Header guards prevent multiple inclusion
+5. Better Encapsulation:
+- Node struct is now private, preventing external code from manipulating the tree's internal structure
+- Internal helper functions are more clearly separated from the public interface
