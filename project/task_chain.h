@@ -10,24 +10,37 @@ namespace mpcs {
 
 namespace detail {
 
-// Helper to execute tasks in sequence
-template<typename T, typename Arg, typename... Rest>
-auto chain_execute(T&& first, Arg&& arg, Rest&&... rest) {
-    // Execute first task with the argument
-    auto result = first(std::forward<Arg>(arg));
-    
-    if constexpr (sizeof...(Rest) == 0) {
-        return result;
-    } else {
-        // Pass the result to the next task in the chain
-        return chain_execute(std::forward<Rest>(rest)..., std::move(result));
-    }
-}
-
-// Base case with just a single task
+// Helper for the base case with a single task
 template<typename T>
 auto chain_execute(T&& task) {
     return task();
+}
+
+// Helper to chain two tasks - execute the first, then pass its result to the second
+template<typename T, typename U>
+auto chain_execute(T&& first, U&& second) {
+    auto first_result = first();
+    return second(first_result);
+}
+
+// Helper to chain multiple tasks sequentially
+template<typename T, typename U, typename... Rest>
+auto chain_execute(T&& first, U&& second, Rest&&... rest) {
+    // Execute first task, pass its result to second task
+    auto intermediate_result = chain_execute(std::forward<T>(first), std::forward<U>(second));
+    
+    // Continue chaining with the intermediate result
+    if constexpr (sizeof...(Rest) == 0) {
+        return intermediate_result;
+    } else {
+        // Create a lambda to hold the intermediate result
+        auto next_task = [result = std::move(intermediate_result)]() {
+            return result;
+        };
+        
+        // Continue chaining
+        return chain_execute(next_task, std::forward<Rest>(rest)...);
+    }
 }
 
 } // namespace detail
@@ -45,25 +58,23 @@ Task<Result> chain_tasks(Tasks&&... tasks) {
         });
     } else {
         return Task<Result>([tasks_tuple = std::make_tuple(std::forward<Tasks>(tasks)...)]() -> Result {
-            return std::apply([](auto&&... args) {
-                return detail::chain_execute(std::forward<decltype(args)>(args)...);
+            return std::apply([](auto&&... tasks) {
+                return detail::chain_execute(std::forward<decltype(tasks)>(tasks)...);
             }, tasks_tuple);
         });
     }
 }
 
-// Specialized version for void result type
+// Helper for void tasks
 template<typename... Tasks>
-Task<void> chain_tasks_void(Tasks&&... tasks) {
-    if constexpr (sizeof...(Tasks) == 0) {
-        return Task<void>([]() {});
-    } else {
-        return Task<void>([tasks_tuple = std::make_tuple(std::forward<Tasks>(tasks)...)]() {
-            std::apply([](auto&&... args) {
-                detail::chain_execute(std::forward<decltype(args)>(args)...);
-            }, tasks_tuple);
-        });
-    }
+Task<void> chain_void_tasks(Tasks&&... tasks) {
+    return Task<void>([tasks_tuple = std::make_tuple(std::forward<Tasks>(tasks)...)]() {
+        std::apply([](auto&&... tasks) {
+            if constexpr (sizeof...(tasks) > 0) {
+                (tasks(), ...); // Execute all tasks in sequence using fold expression
+            }
+        }, tasks_tuple);
+    });
 }
 
 // CRTP base class for task executor customization

@@ -25,7 +25,7 @@ set(SOURCES
     task_scheduler.cpp
 )
 
-# Header files - included for IDE integration
+# Header files
 set(HEADERS
     task_concept.h
     task.h

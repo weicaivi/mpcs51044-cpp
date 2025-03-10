@@ -106,7 +106,7 @@ public:
         auto future = pool_.submit(repeating_task);
         
         // Return a future that allows stopping the repeating task
-        return std::async(std::launch::deferred, [future, stop]() mutable {
+        return std::async(std::launch::deferred, [future = std::move(future), stop]() mutable {
             stop->store(true);
             future.wait();
         });

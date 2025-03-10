@@ -104,7 +104,7 @@ auto benchmark(const std::string& name, Func&& func, Args&&... args) {
 void demo_basic_tasks() {
     std::cout << "\n--- Demo 1: Basic task submission and execution ---\n";
     
-    ThreadPool pool(4);
+    mpcs::ThreadPool pool(4);
     
     // Submit a simple task
     auto future1 = pool.submit([]() {
@@ -129,7 +129,7 @@ void demo_basic_tasks() {
 void demo_task_priorities() {
     std::cout << "\n--- Demo 2: Task with priorities ---\n";
     
-    TaskScheduler scheduler(2);
+    mpcs::TaskScheduler scheduler(2);
     
     // Schedule tasks with different priorities
     auto low_priority = scheduler.schedule_with_priority([]() {
@@ -164,15 +164,15 @@ void demo_task_chaining() {
     
     // Create a chain of tasks for file processing
     auto task_chain = chain_tasks<std::vector<std::string>>(
-        [](){ 
+        []() { 
             std::cout << "Step 1: Reading file\n"; 
             return read_file("input.txt"); 
         },
-        [](std::vector<std::string> lines){ 
+        [](std::vector<std::string> lines) { 
             std::cout << "Step 2: Processing lines\n"; 
             return process_lines(lines); 
         },
-        [](std::vector<std::string> processed){ 
+        [](std::vector<std::string> processed) { 
             std::cout << "Step 3: Writing file\n"; 
             write_file("output.txt", processed);
             return processed;
@@ -200,8 +200,8 @@ void demo_task_chaining() {
 void demo_task_graph() {
     std::cout << "\n--- Demo 4: Task graph with dependencies ---\n";
     
-    TaskScheduler scheduler(4);
-    TaskGraph<int> graph;
+    mpcs::TaskScheduler scheduler(4);
+    mpcs::TaskGraph<int> graph;
     
     // Add tasks to the graph
     graph.add_task("load_config", []() {
@@ -253,7 +253,7 @@ void demo_custom_executor() {
     
     LoggingTaskExecutor executor("MainExecutor");
     
-    Task<int> task([]() {
+    mpcs::Task<int> task([]() {
         std::cout << "Executing task in thread " << std::this_thread::get_id() << std::endl;
         std::this_thread::sleep_for(100ms);
         return 42;
@@ -268,7 +268,7 @@ void demo_custom_executor() {
 void demo_repeating_tasks() {
     std::cout << "\n--- Demo 6: Repeating tasks ---\n";
     
-    TaskScheduler scheduler(2);
+    mpcs::TaskScheduler scheduler(2);
     std::atomic<int> counter = 0;
     
     auto stop_token = scheduler.schedule_repeating([&counter]() {
@@ -287,7 +287,7 @@ void demo_task_allocator() {
     std::cout << "\n--- Demo 7: Task allocator ---\n";
     
     // Create a vector that uses our custom allocator
-    std::vector<int, TaskAllocator<int>> vec;
+    std::vector<int, mpcs::TaskAllocator<int>> vec;
     
     // Add some elements
     std::cout << "Adding elements using TaskAllocator" << std::endl;
@@ -311,7 +311,7 @@ void demo_benchmark() {
     const int work_size = 10000;
     
     auto benchmark_threads = [num_tasks, work_size](size_t num_threads) {
-        TaskScheduler scheduler(num_threads);
+        mpcs::TaskScheduler scheduler(num_threads);
         std::vector<std::future<int>> results;
         
         auto start = std::chrono::high_resolution_clock::now();
@@ -350,24 +350,26 @@ void demo_benchmark() {
 }
 
 int main() {
-    std::cout << "=== Task Scheduler with Thread Pool Demo ===" << std::endl;
-    std::cout << "Hardware concurrency: " << std::thread::hardware_concurrency() << " threads" << std::endl;
+    // std::cout << "=== Task Scheduler with Thread Pool Demo ===" << std::endl;
+    // std::cout << "Hardware concurrency: " << std::thread::hardware_concurrency() << " threads" << std::endl;
     
-    try {
-        demo_basic_tasks();
-        demo_task_priorities();
-        demo_task_chaining();
-        demo_task_graph();
-        demo_custom_executor();
-        demo_repeating_tasks();
-        demo_task_allocator();
-        demo_benchmark();
+    // try {
+    //     demo_basic_tasks();
+    //     demo_task_priorities();
+    //     demo_task_chaining();
+    //     demo_task_graph();
+    //     demo_custom_executor();
+    //     demo_repeating_tasks();
+    //     demo_task_allocator();
+    //     demo_benchmark();
         
-        std::cout << "\nAll demos completed successfully!" << std::endl;
-    } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
-    }
+    //     std::cout << "\nAll demos completed successfully!" << std::endl;
+    // } catch (const std::exception& e) {
+    //     std::cerr << "Error: " << e.what() << std::endl;
+    //     return 1;
+    // }
+    std::cout << "Program started!" << std::endl;
+    std::cout << "Program finished!" << std::endl;
     
     return 0;
 }

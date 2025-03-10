@@ -19,7 +19,7 @@ private:
     std::atomic<bool> running_;
     std::vector<std::thread> workers_;
     std::queue<std::function<void()>> tasks_;
-    std::mutex queue_mutex_;
+    mutable std::mutex queue_mutex_;
     std::condition_variable condition_;
     std::atomic<size_t> active_tasks_;
     std::condition_variable all_done_condition_;
@@ -79,7 +79,7 @@ public:
             }
             
             active_tasks_++;
-            tasks_.emplace([t = std::move(task), this]() {
+            tasks_.emplace([t = std::move(task), this]() mutable {
                 t.execute();
                 decrementActiveTask();
             });

@@ -57,7 +57,7 @@ void ThreadPool::worker_thread() {
                 return;
             }
             
-            task = std::move(tasks_.front());
+            task = tasks_.front();
             tasks_.pop();
         }
         
