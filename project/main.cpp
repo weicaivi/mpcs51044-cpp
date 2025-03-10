@@ -187,7 +187,6 @@ void demo_task_chaining() {
         std::cout << "Task chain completed successfully with " << result.size() << " lines processed\n";
     } catch (const std::exception& e) {
         std::cout << "Task chain failed: " << e.what() << std::endl;
-        // Create a dummy input file for demo purposes
         std::ofstream input("input.txt");
         input << "This is a test line\n";
         input << "Another line for processing\n";
@@ -247,7 +246,7 @@ void demo_task_graph() {
     std::cout << "Task graph execution completed" << std::endl;
 }
 
-// Demo 5: Custom task executor with CRTP
+// Demo 5: Custom task executor
 void demo_custom_executor() {
     std::cout << "\n--- Demo 5: Custom task executor with CRTP ---\n";
     

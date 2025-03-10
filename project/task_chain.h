@@ -71,7 +71,7 @@ Task<void> chain_void_tasks(Tasks&&... tasks) {
     return Task<void>([tasks_tuple = std::make_tuple(std::forward<Tasks>(tasks)...)]() {
         std::apply([](auto&&... tasks) {
             if constexpr (sizeof...(tasks) > 0) {
-                (tasks(), ...); // Execute all tasks in sequence using fold expression
+                (tasks(), ...); // Execute all tasks in sequence
             }
         }, tasks_tuple);
     });
