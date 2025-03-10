@@ -19,6 +19,5 @@ target_link_libraries(my_promise PRIVATE Threads::Threads)
 
 find_library(ATOMIC_LIBRARY NAMES atomic atomic.so.1 libatomic.so.1)
 if(ATOMIC_LIBRARY)
-    message(STATUS "Found atomic library: ${ATOMIC_LIBRARY}")
     target_link_libraries(my_promise PRIVATE ${ATOMIC_LIBRARY})
 endif()

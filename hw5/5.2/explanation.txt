@@ -1,0 +1,8 @@
+I prefer the jthread version better.
+
+jthread automatically joins in its destructor so forgetting
+to call .join() won't lead to program termination. 
+
+If an exception occurs between thread creation and the join calls,
+jthread still ensures proper cleanup. With std::thread, we'd need to
+write extra try-catch blocks to handle this safely.
