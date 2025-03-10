@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <mutex>
 #include <condition_variable>
+#include <iostream>
 #include "task.h"
 #include "thread_pool.h"
 
@@ -48,84 +49,58 @@ public:
         nodes_[dep_idx].dependents.push_back(dependent_idx);
     }
     
-    // Execute the graph on a thread pool
+    // Execute the graph on a thread pool - simplified version
     void execute(ThreadPool& pool) {
-        std::vector<std::future<NodeValue>> futures;
-        std::unordered_set<size_t> completed;
-        std::mutex completed_mutex;
-        std::condition_variable completed_cv;
+        std::cout << "Starting task graph execution with " << nodes_.size() << " nodes" << std::endl;
         
-        // Find all nodes with no dependencies
-        std::vector<size_t> ready_nodes;
+        // Track completed nodes
+        std::vector<bool> completed(nodes_.size(), false);
+        std::mutex mutex;
+        std::condition_variable cv;
+        
+        // Create a shared_ptr to hold futures (allows sharing between lambdas)
+        auto futures_ptr = std::make_shared<std::vector<std::future<void>>>();
+        
+        // Submit all tasks that can start immediately (no dependencies)
         for (size_t i = 0; i < nodes_.size(); ++i) {
             if (nodes_[i].dependencies.empty()) {
-                ready_nodes.push_back(i);
+                std::cout << "Submitting initial node " << i << std::endl;
+                
+                futures_ptr->push_back(pool.submit([this, i, &completed, &mutex, &cv, &pool, futures_ptr]() {
+                    // Execute this task
+                    nodes_[i].task.execute();
+                    
+                    // Mark as completed
+                    {
+                        std::lock_guard<std::mutex> lock(mutex);
+                        completed[i] = true;
+                        std::cout << "Node " << i << " completed" << std::endl;
+                    }
+                    cv.notify_all();
+                    
+                    // Check for dependent tasks that can now run
+                    process_dependents(i, completed, mutex, cv, pool, futures_ptr);
+                }));
             }
         }
         
-        // Function to check and update the graph when a task completes
-        auto on_task_complete = [&](size_t node_idx) {
-            std::unique_lock<std::mutex> lock(completed_mutex);
-            completed.insert(node_idx);
-            
-            // Check for new ready nodes
-            for (size_t dependent : nodes_[node_idx].dependents) {
-                bool all_deps_done = true;
-                for (size_t dep : nodes_[dependent].dependencies) {
-                    if (completed.find(dep) == completed.end()) {
-                        all_deps_done = false;
-                        break;
-                    }
+        // Wait until all nodes are completed
+        {
+            std::unique_lock<std::mutex> lock(mutex);
+            cv.wait(lock, [&completed]() {
+                for (bool is_completed : completed) {
+                    if (!is_completed) return false;
                 }
-                
-                if (all_deps_done) {
-                    ready_nodes.push_back(dependent);
-                    completed_cv.notify_all();
-                }
-            }
-        };
-        
-        // Submit ready tasks and wait for more to become ready
-        while (completed.size() < nodes_.size()) {
-            // Submit all ready tasks
-            {
-                std::unique_lock<std::mutex> lock(completed_mutex);
-                
-                while (!ready_nodes.empty()) {
-                    size_t node_idx = ready_nodes.back();
-                    ready_nodes.pop_back();
-                    
-                    // Avoid submitting the same task twice
-                    if (completed.find(node_idx) != completed.end()) {
-                        continue;
-                    }
-                    
-                    auto task_wrapper = [node_idx, &on_task_complete, this]() {
-                        nodes_[node_idx].task.execute();
-                        on_task_complete(node_idx);
-                        if constexpr (!std::is_void_v<NodeValue>) {
-                            return nodes_[node_idx].task.get_future().get();
-                        }
-                    };
-                    
-                    lock.unlock();
-                    futures.push_back(pool.submit(task_wrapper));
-                    lock.lock();
-                }
-                
-                // If not all tasks are completed, wait for more tasks to be ready
-                if (completed.size() < nodes_.size()) {
-                    completed_cv.wait(lock, [&ready_nodes]() {
-                        return !ready_nodes.empty();
-                    });
-                }
-            }
+                return true;
+            });
         }
         
-        // Wait for all futures
-        for (auto& future : futures) {
+        // Wait for all futures to complete
+        for (auto& future : *futures_ptr) {
             future.wait();
         }
+        
+        std::cout << "All graph tasks completed" << std::endl;
     }
     
     // Check if the graph has cycles
@@ -143,6 +118,62 @@ public:
     }
     
 private:
+    // Helper to process dependent tasks after a task completes
+    void process_dependents(
+        size_t completed_idx, 
+        std::vector<bool>& completed, 
+        std::mutex& mutex,
+        std::condition_variable& cv,
+        ThreadPool& pool, 
+        std::shared_ptr<std::vector<std::future<void>>> futures_ptr) {
+        
+        // Get all dependent tasks
+        const auto& dependents = nodes_[completed_idx].dependents;
+        
+        for (size_t dependent_idx : dependents) {
+            bool can_execute = false;
+            
+            // Check if all dependencies are completed
+            {
+                std::lock_guard<std::mutex> lock(mutex);
+                
+                can_execute = true;
+                for (size_t dep_idx : nodes_[dependent_idx].dependencies) {
+                    if (!completed[dep_idx]) {
+                        can_execute = false;
+                        break;
+                    }
+                }
+                
+                // If already completed or can't execute yet, skip
+                if (completed[dependent_idx] || !can_execute) {
+                    continue;
+                }
+            }
+            
+            // Submit the task if it can execute
+            if (can_execute) {
+                std::cout << "Submitting dependent node " << dependent_idx << std::endl;
+                
+                futures_ptr->push_back(pool.submit([this, dependent_idx, &completed, &mutex, &cv, &pool, futures_ptr]() {
+                    // Execute the task
+                    nodes_[dependent_idx].task.execute();
+                    
+                    // Mark as completed
+                    {
+                        std::lock_guard<std::mutex> lock(mutex);
+                        completed[dependent_idx] = true;
+                        std::cout << "Node " << dependent_idx << " completed" << std::endl;
+                    }
+                    cv.notify_all();
+                    
+                    // Process its dependents
+                    process_dependents(dependent_idx, completed, mutex, cv, pool, futures_ptr);
+                }));
+            }
+        }
+    }
+    
     bool has_cycles_dfs(size_t node, std::unordered_set<size_t>& visited, 
                        std::unordered_set<size_t>& rec_stack) const {
         

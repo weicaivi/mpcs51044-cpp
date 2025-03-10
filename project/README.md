@@ -1,61 +1,118 @@
 # Task Scheduler with Thread Pool
 
-This project implements a thread pool and task scheduling system using modern C++ techniques.
+This project Task Scheduler  implements a thread pool and task scheduling system using modern C++ techniques. It provides a flexible framework for parallel execution of tasks with features such as:
 
-- Templates and type erasure
-- Move semantics and RAII
-- Operator overloading
-- Thread synchronization primitives
-- Smart pointers
-- CRTP (Curiously Recurring Template Pattern)
-- Custom allocators
+- Thread pool for concurrent task execution
+- Type-erased task containers that can hold any callable
+- Task prioritization with customizable scheduling
+- Task dependency graphs for complex workflows
+- Task chaining for composable operations
+- Thread-safe execution with proper synchronization
+- Custom memory allocation for performance optimization
 
-## Project Structure
+## Components
 
-- `task_concept.h` - Type-erased interface for tasks
-- `task.h` - Task wrapper with type erasure and priority support
-- `thread_pool.h/cpp` - Thread pool implementation for parallel task execution
-- `task_scheduler.h/cpp` - High-level scheduler for managing tasks
-- `task_graph.h` - Dependency graph for ordered task execution
-- `task_chain.h` - Tools for chaining tasks together
-- `task_allocator.h` - Custom memory allocator for tasks
-- `main.cpp` - Demo application showing various features
+### Core Components
 
-## Features
-
-1. **Type-erased Tasks**: Store any callable in a type-safe manner
-2. **Priority-based Execution**: Assign priorities to tasks
-3. **Task Chaining**: Create pipelines of dependent tasks
-4. **Task Graph**: Define complex task dependencies
-5. **Custom Task Execution**: Extend task execution with CRTP
-6. **Repeating Tasks**: Schedule tasks to execute periodically
-7. **Memory Management**: Efficient allocation with custom allocator
-8. **Thread Safety**: All operations are thread-safe
+- **TaskConcept/TaskModel**: Implements type erasure to store and execute any callable
+- **Task**: Generic task wrapper supporting priorities and dependencies
+- **MPCSThreadPool**: Thread pool implementation for parallel task execution
+- **TaskScheduler**: High-level interface for scheduling and managing tasks
+- **TaskGraph**: Dependency-based execution of task networks
+- **TaskChain**: Sequential execution of interdependent tasks
+- **TaskAllocator**: Custom memory allocation for task objects
 
 ## Building and Running
 
 ### Prerequisites
 
-- C++20 compatible compiler (GCC 10+, Clang 10+, or MSVC 19.28+)
+- C++20 compatible compiler
+- CMake 3.10 or higher
+- Threads library
 
-### Compilation
+### Build
 
 ```bash
-# Using make
+mkdir build
+cd build
+cmake ..
 make
-
-# Manual compilation
-g++ -std=c++20 -Wall -Wextra -pedantic -pthread main.cpp thread_pool.cpp task_scheduler.cpp -o task_scheduler
 ```
 
 ### Running
 
 ```bash
-# Using make
-make run
+./main
+```
 
-# Manual execution
-./task_scheduler
+## Demonstrations
+
+The project includes several demonstrations of the task scheduling system:
+
+1. **Basic Task Submission**: Simple task execution with the thread pool
+2. **Task Priorities**: Prioritized execution of tasks
+3. **Task Chaining**: Sequential execution where results flow from one task to the next
+4. **Task Graph with Dependencies**: Complex dependency-based execution of task networks
+5. **Custom Task Executor**: Extending task execution with CRTP
+6. **Repeating Tasks**: Schedule tasks to execute periodically
+7. **Task Allocator**: Efficient memory management for tasks
+8. **Performance Benchmarks**: Thread count performance comparison
+
+## Implementation Details
+
+### Type Erasure Pattern
+
+The type erasure pattern is used to store any callable in a type-safe manner:
+
+```cpp
+class TaskConcept {
+public:
+    virtual ~TaskConcept() = default;
+    virtual void execute() = 0;
+    virtual bool is_completed() const = 0;
+    virtual std::unique_ptr<TaskConcept> clone() const = 0;
+};
+
+template<typename F>
+class TaskModel : public TaskConcept {
+private:
+    std::shared_ptr<F> func_;
+    bool completed_ = false;
+public:
+    // Implementation details...
+};
+```
+
+### Thread Synchronization
+
+Thread safety is achieved through careful use of mutexes, condition variables, and atomic operations:
+
+```cpp
+std::mutex queue_mutex_;
+std::condition_variable condition_;
+std::atomic<size_t> active_tasks_;
+```
+
+### Move Semantics
+
+Move semantics are used extensively for efficient transfer of resources:
+
+```cpp
+tasks_.emplace([task = std::move(task), this]() mutable {
+    task.execute();
+    decrementActiveTask();
+});
+```
+
+### Template Programming
+
+Templates enable generic programming while preserving type safety:
+
+```cpp
+template<typename Result, typename... Tasks>
+Task<Result> chain_tasks(Tasks&&... tasks) {
+    // Implementation details...
+}
 ```
 
 ## Usage Examples
@@ -63,14 +120,10 @@ make run
 ### Basic Task Submission
 
 ```cpp
-ThreadPool pool(4);  // Create a thread pool with 4 threads
-
-// Submit a task and get a future
+ThreadPool pool(4);
 auto future = pool.submit([]() {
     return 42;
 });
-
-// Get the result
 int result = future.get();  // result = 42
 ```
 
@@ -78,48 +131,27 @@ int result = future.get();  // result = 42
 
 ```cpp
 TaskScheduler scheduler(4);
-
-// Schedule a high-priority task
 auto high_priority = scheduler.schedule_with_priority([]() {
     return "Important task";
 }, 10);
-
-// Schedule a low-priority task
-auto low_priority = scheduler.schedule_with_priority([]() {
-    return "Less important task";
-}, 1);
-
-// High priority task likely executes first
 ```
 
 ### Task Chaining
 
 ```cpp
-// Create a chain of tasks where each task's result feeds into the next
 auto task_chain = chain_tasks<int>(
     []() { return 1; },                 // First task returns 1
     [](int i) { return i + 2; },        // Add 2 to previous result
     [](int i) { return i * 3; }         // Multiply previous result by 3
 );
-
-auto future = scheduler.schedule(std::move(task_chain));
-int result = future.get();  // result = (1 + 2) * 3 = 9
 ```
 
-### Task Graph with Dependencies
+### Task Graph
 
 ```cpp
 TaskGraph<void> graph;
-
-// Add tasks
 graph.add_task("task1", []() { std::cout << "Task 1\n"; });
 graph.add_task("task2", []() { std::cout << "Task 2\n"; });
-graph.add_task("task3", []() { std::cout << "Task 3\n"; });
-
-// Add dependencies: task3 depends on both task1 and task2
-graph.add_dependency("task3", "task1");
-graph.add_dependency("task3", "task2");
-
-// Execute graph - task1 and task2 can run in parallel, task3 waits for both
+graph.add_dependency("task2", "task1");  // task2 depends on task1
 scheduler.schedule_graph(graph);
 ```

@@ -350,26 +350,24 @@ void demo_benchmark() {
 }
 
 int main() {
-    // std::cout << "=== Task Scheduler with Thread Pool Demo ===" << std::endl;
-    // std::cout << "Hardware concurrency: " << std::thread::hardware_concurrency() << " threads" << std::endl;
+    std::cout << "=== Task Scheduler with Thread Pool Demo ===" << std::endl;
+    std::cout << "Hardware concurrency: " << std::thread::hardware_concurrency() << " threads" << std::endl;
     
-    // try {
-    //     demo_basic_tasks();
-    //     demo_task_priorities();
-    //     demo_task_chaining();
-    //     demo_task_graph();
-    //     demo_custom_executor();
-    //     demo_repeating_tasks();
-    //     demo_task_allocator();
-    //     demo_benchmark();
+    try {
+        demo_basic_tasks();
+        demo_task_priorities();
+        demo_task_chaining();
+        demo_task_graph();
+        demo_custom_executor();
+        demo_repeating_tasks();
+        demo_task_allocator();
+        demo_benchmark();
         
-    //     std::cout << "\nAll demos completed successfully!" << std::endl;
-    // } catch (const std::exception& e) {
-    //     std::cerr << "Error: " << e.what() << std::endl;
-    //     return 1;
-    // }
-    std::cout << "Program started!" << std::endl;
-    std::cout << "Program finished!" << std::endl;
+        std::cout << "\nAll demos completed successfully!" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
+    }
     
     return 0;
 }
