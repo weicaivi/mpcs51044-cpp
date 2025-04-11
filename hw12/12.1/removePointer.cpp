@@ -9,7 +9,7 @@ struct remove_all_pointers {
 // Specialization for pointer types
 template<class T>
 struct remove_all_pointers<T*> {
-    using type = typename remove_all_pointers<T>::type; // Recursively remove pointers
+    using type = typename remove_all_pointers<T>::type;
 };
 
 // Helper alias template
