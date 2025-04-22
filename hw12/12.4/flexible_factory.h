@@ -26,9 +26,24 @@ struct signature_trait<R(Args...)> {
     static constexpr size_t arg_count = sizeof...(Args);
 };
 
-// Creator for flexible factory
+// Add this helper to determine if a type is a function signature
+template<typename T>
+struct is_signature : std::false_type {};
+
+template<typename R, typename... Args>
+struct is_signature<R(Args...)> : std::true_type {};
+
+template<typename T>
+inline constexpr bool is_signature_v = is_signature<T>::value;
+
+// Modified flexible abstract creator
+template<typename T, typename Enable = void>
+struct flexible_abstract_creator;
+
+// Specialization for function signatures
 template<typename Signature>
-struct flexible_abstract_creator {
+struct flexible_abstract_creator<Signature, 
+    std::enable_if_t<is_signature_v<Signature>>> {
     using T = typename signature_trait<Signature>::return_type;
     using ArgsT = typename signature_trait<Signature>::args_tuple;
     
@@ -36,58 +51,88 @@ struct flexible_abstract_creator {
     virtual std::unique_ptr<T> doCreate(TTS<T, Args...>&&, Args&&... args) = 0;
 };
 
-// Default case - no args
+// Specialization for non-function types (default constructor case)
 template<typename T>
-struct flexible_abstract_creator<T> {
+struct flexible_abstract_creator<T, 
+    std::enable_if_t<!is_signature_v<T>>> {
     virtual std::unique_ptr<T> doCreate(TTS<T>&&) = 0;
 };
 
-// flexible abstract factory
-template<typename... Signatures>
-struct flexible_abstract_factory : public flexible_abstract_creator<Signatures>... {
-    // Helper to handle no parameter case
-    template<typename U>
+// The flexible abstract factory
+template<typename... Types>
+struct flexible_abstract_factory : public flexible_abstract_creator<Types>... {
+    // Helper for parameterized constructor case
+    template<typename U, typename... Args, 
+             std::enable_if_t<is_signature_v<U(Args...)>, int> = 0>
+    std::unique_ptr<typename signature_trait<U(Args...)>::return_type> 
+    create(Args&&... args) {
+        using ReturnType = typename signature_trait<U(Args...)>::return_type;
+        flexible_abstract_creator<U(Args...)>& creator = *this;
+        return creator.doCreate(TTS<ReturnType, Args...>(), std::forward<Args>(args)...);
+    }
+    
+    // Helper for default constructor case
+    template<typename U, 
+             std::enable_if_t<!is_signature_v<U>, int> = 0>
     std::unique_ptr<U> create() {
         flexible_abstract_creator<U>& creator = *this;
         return creator.doCreate(TTS<U>());
     }
     
-    // Helper to handle parameterized constructors
-    template<typename U, typename... Args>
-    std::unique_ptr<U> create(Args&&... args) {
-        flexible_abstract_creator<U(Args...)>& creator = *this;
-        return creator.doCreate(TTS<U, Args...>(), std::forward<Args>(args)...);
-    }
-    
     virtual ~flexible_abstract_factory() = default;
 };
 
-// Concrete creator for flexible factory - default constructor case
+// Concrete creator for default constructor case
 template<typename AbstractFactory, typename Abstract, typename Concrete>
-struct flexible_concrete_creator : virtual public AbstractFactory {
+struct flexible_concrete_creator_default : virtual public AbstractFactory {
     std::unique_ptr<Abstract> doCreate(TTS<Abstract>&&) override {
         return std::make_unique<Concrete>();
     }
 };
 
-// Concrete creator for flexible factory - parameterized constructor case
+// Concrete creator for parameterized constructor case
+template<typename AbstractFactory, typename Signature, typename Concrete>
+struct flexible_concrete_creator_param;
+
 template<typename AbstractFactory, typename Abstract, typename... Args, typename Concrete>
-struct flexible_concrete_creator<AbstractFactory, Abstract(Args...), Concrete> : virtual public AbstractFactory {
+struct flexible_concrete_creator_param<AbstractFactory, Abstract(Args...), Concrete> 
+    : virtual public AbstractFactory {
     std::unique_ptr<Abstract> doCreate(TTS<Abstract, Args...>&&, Args&&... args) override {
         return std::make_unique<Concrete>(std::forward<Args>(args)...);
     }
+};
+
+// Helper type trait to determine which concrete creator to use
+template<typename T>
+struct factory_trait {
+    using type = T;
+    static constexpr bool has_params = false;
+};
+
+template<typename R, typename... Args>
+struct factory_trait<R(Args...)> {
+    using type = R;
+    static constexpr bool has_params = true;
+    using signature = R(Args...);
 };
 
 // Concrete factory helper
 template<typename AbstractFactory, typename... ConcreteTypes>
 struct flexible_concrete_factory;
 
-// Specialization for matching abstract and concrete types
+// Implementation of concrete factory
 template<typename... AbstractTypes, typename... ConcreteTypes>
 struct flexible_concrete_factory<flexible_abstract_factory<AbstractTypes...>, ConcreteTypes...> 
-    : public flexible_concrete_creator<flexible_abstract_factory<AbstractTypes...>, 
-                                      AbstractTypes, ConcreteTypes>... {
-};
+    : public std::conditional_t
+        factory_trait<AbstractTypes>::has_params,
+        flexible_concrete_creator_param<flexible_abstract_factory<AbstractTypes...>, 
+                                       AbstractTypes, 
+                                       ConcreteTypes>,
+        flexible_concrete_creator_default<flexible_abstract_factory<AbstractTypes...>, 
+                                         typename factory_trait<AbstractTypes>::type, 
+                                         ConcreteTypes>
+    >... 
+{};
 
-} 
+} // namespace cspp51045
 #endif
