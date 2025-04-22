@@ -15,7 +15,7 @@ struct Locomotive {
 
 struct FreightCar {
     virtual void display() = 0;
-    virtual long getCapacity() const = 0;
+    virtual long getCapacity() const = 0; 
     virtual ~FreightCar() = default;
 };
 
@@ -25,44 +25,37 @@ struct Caboose {
 };
 
 // Concrete model train implementations
-struct ModelLocomotive : public Locomotive {
-    ModelLocomotive(double horsepower) : horsepower_(horsepower) {
-        cout << "Creating model locomotive with " << horsepower << " HP" << endl;
-    }
+class ModelLocomotive : public Locomotive {
+    double horsepower;
+public:
+    ModelLocomotive(double hp) : horsepower(hp) {}
     
     void display() override {
-        cout << "Model locomotive with " << horsepower_ << " HP" << endl;
+        cout << "Model locomotive with " << horsepower << " HP" << endl;
     }
     
     double getHorsepower() const override {
-        return horsepower_;
+        return horsepower;
     }
-    
-private:
-    double horsepower_;
 };
 
-struct ModelFreightCar : public FreightCar {
-    ModelFreightCar(long capacity) : capacity_(capacity) {
-        cout << "Creating model freight car with " << capacity << " capacity" << endl;
-    }
+class ModelFreightCar : public FreightCar {
+    long capacity;
+public:
+    ModelFreightCar(long cap) : capacity(cap) {}
     
     void display() override {
-        cout << "Model freight car with " << capacity_ << " capacity" << endl;
+        cout << "Model freight car with capacity " << capacity << endl;
     }
     
     long getCapacity() const override {
-        return capacity_;
+        return capacity;
     }
-    
-private:
-    long capacity_;
 };
 
-struct ModelCaboose : public Caboose {
-    ModelCaboose() {
-        cout << "Creating model caboose" << endl;
-    }
+class ModelCaboose : public Caboose {
+public:
+    ModelCaboose() {}
     
     void display() override {
         cout << "Model caboose" << endl;
@@ -70,97 +63,93 @@ struct ModelCaboose : public Caboose {
 };
 
 // Concrete real train implementations
-struct RealLocomotive : public Locomotive {
-    RealLocomotive(double horsepower) : horsepower_(horsepower) {
-        cout << "Creating real locomotive with " << horsepower << " HP" << endl;
-    }
+class RealLocomotive : public Locomotive {
+    double horsepower;
+public:
+    RealLocomotive(double hp) : horsepower(hp) {}
     
     void display() override {
-        cout << "Real locomotive with " << horsepower_ << " HP" << endl;
+        cout << "Real locomotive with " << horsepower << " HP" << endl;
     }
     
     double getHorsepower() const override {
-        return horsepower_;
+        return horsepower;
     }
-    
-private:
-    double horsepower_;
 };
 
-struct RealFreightCar : public FreightCar {
-    RealFreightCar(long capacity) : capacity_(capacity) {
-        cout << "Creating real freight car with " << capacity << " capacity" << endl;
-    }
+class RealFreightCar : public FreightCar {
+    long capacity;
+public:
+    RealFreightCar(long cap) : capacity(cap) {}
     
     void display() override {
-        cout << "Real freight car with " << capacity_ << " capacity" << endl;
+        cout << "Real freight car with capacity " << capacity << endl;
     }
     
     long getCapacity() const override {
-        return capacity_;
+        return capacity;
     }
-    
-private:
-    long capacity_;
 };
 
-struct RealCaboose : public Caboose {
-    RealCaboose() {
-        cout << "Creating real caboose" << endl;
-    }
+class RealCaboose : public Caboose {
+public:
+    RealCaboose() {}
     
     void display() override {
         cout << "Real caboose" << endl;
     }
 };
 
-// Define the abstract factory with signatures
-using TrainFactory = flexible_abstract_factory<
+// Define the abstract factory type with constructor signatures
+using TrainFactory = flexible_abstract_factory
     Locomotive(double), 
-    FreightCar(long), 
-    Caboose()
+    FreightCar(long),
+    Caboose
 >;
 
-// Define concrete factory for model trains
-using ModelTrainFactory = flexible_concrete_factory<
-    TrainFactory,
-    concrete_pair<TrainFactory, Locomotive(double), ModelLocomotive>,
-    concrete_pair<TrainFactory, FreightCar(long), ModelFreightCar>,
-    concrete_pair<TrainFactory, Caboose(), ModelCaboose>
+// Define concrete factories
+using ModelTrainFactory = flexible_concrete_factory
+    TrainFactory, 
+    ModelLocomotive, 
+    ModelFreightCar, 
+    ModelCaboose
 >;
 
-// Define concrete factory for real trains
-using RealTrainFactory = flexible_concrete_factory<
-    TrainFactory,
-    concrete_pair<TrainFactory, Locomotive(double), RealLocomotive>,
-    concrete_pair<TrainFactory, FreightCar(long), RealFreightCar>,
-    concrete_pair<TrainFactory, Caboose(), RealCaboose>
+using RealTrainFactory = flexible_concrete_factory
+    TrainFactory, 
+    RealLocomotive, 
+    RealFreightCar, 
+    RealCaboose
 >;
 
 int main() {
-    cout << "Creating model train:" << endl;
-    unique_ptr<TrainFactory> modelFactory = make_unique<ModelTrainFactory>();
+    // Create model train factory
+    unique_ptr<TrainFactory> factory = make_unique<ModelTrainFactory>();
     
-    unique_ptr<Locomotive> modelLoco = modelFactory->create<Locomotive>(75.5);
-    unique_ptr<FreightCar> modelFreight = modelFactory->create<FreightCar>(250L);
-    unique_ptr<Caboose> modelCaboose = modelFactory->create<Caboose>();
+    // Create train components with parameters
+    unique_ptr<Locomotive> locomotive(factory->create<Locomotive>(120.5));
+    unique_ptr<FreightCar> freightCar(factory->create<FreightCar>(5000L));
+    unique_ptr<Caboose> caboose(factory->create<Caboose>());
     
-    cout << "\nDisplaying model train components:" << endl;
-    modelLoco->display();
-    modelFreight->display();
-    modelCaboose->display();
+    // Display train components
+    cout << "Model Train Components:" << endl;
+    locomotive->display();
+    freightCar->display();
+    caboose->display();
     
-    cout << "\n\nCreating real train:" << endl;
-    unique_ptr<TrainFactory> realFactory = make_unique<RealTrainFactory>();
+    // Create real train factory
+    factory = make_unique<RealTrainFactory>();
     
-    unique_ptr<Locomotive> realLoco = realFactory->create<Locomotive>(12000.0);
-    unique_ptr<FreightCar> realFreight = realFactory->create<FreightCar>(10000L);
-    unique_ptr<Caboose> realCaboose = realFactory->create<Caboose>();
+    // Create real train components with different parameters
+    locomotive = factory->create<Locomotive>(5000.0);
+    freightCar = factory->create<FreightCar>(50000L);
+    caboose = factory->create<Caboose>();
     
-    cout << "\nDisplaying real train components:" << endl;
-    realLoco->display();
-    realFreight->display();
-    realCaboose->display();
+    // Display train components
+    cout << "\nReal Train Components:" << endl;
+    locomotive->display();
+    freightCar->display();
+    caboose->display();
     
     return 0;
 }
